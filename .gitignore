@@ -1,7 +1,6 @@
 node_modules/
 android/
 www/tiles/
-www/lib/
 *.apk
 .DS_Store
 Thumbs.db
