@@ -190,7 +190,6 @@
         }
 
         showToast('현재 위치를 찾고 있습니다...');
-        infoPanel.classList.remove('hidden');
 
         navigator.geolocation.getCurrentPosition(
             function (position) {
@@ -226,7 +225,6 @@
             totalDistance = 0;
             trackingPath.setLatLngs([]);
             btnTrack.classList.add('active');
-            infoPanel.classList.remove('hidden');
             showToast('위치 추적을 시작합니다...');
 
             watchId = navigator.geolocation.watchPosition(
