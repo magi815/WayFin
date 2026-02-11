@@ -1,0 +1,8 @@
+{
+  "appId": "com.magi.mmap",
+  "appName": "지도 앱",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

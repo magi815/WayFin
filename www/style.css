@@ -1,0 +1,684 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Control buttons */
+#controls {
+    position: absolute;
+    top: 20px;
+    right: 16px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#controls button {
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 12px;
+    background: white;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+}
+
+#controls button:hover {
+    background: #f0f0f0;
+    transform: scale(1.05);
+}
+
+#controls button:active {
+    transform: scale(0.95);
+}
+
+#controls button.active {
+    background: #2563eb;
+    color: white;
+}
+
+#controls button.active:hover {
+    background: #1d4ed8;
+}
+
+/* Info panel */
+#info-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: white;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
+    transform: translateY(0);
+    transition: transform 0.3s ease;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+#info-panel.hidden {
+    transform: translateY(100%);
+}
+
+#info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px 8px;
+    font-weight: 700;
+    font-size: 16px;
+    color: #1a1a1a;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+#info-header::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+}
+
+#btn-close-info {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #999;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+#info-body {
+    padding: 12px 20px 24px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: #888;
+    font-size: 14px;
+}
+
+.info-value {
+    color: #1a1a1a;
+    font-weight: 600;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Toast notification */
+#toast {
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-size: 14px;
+    white-space: nowrap;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+#toast.hidden {
+    opacity: 0;
+}
+
+/* Tracking path style */
+.tracking-path {
+    stroke: #2563eb;
+    stroke-opacity: 0.7;
+    fill: none;
+}
+
+/* Pulse animation for current location marker */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(3);
+        opacity: 0;
+    }
+}
+
+.location-pulse {
+    width: 16px;
+    height: 16px;
+    background: #2563eb;
+    border-radius: 50%;
+    position: relative;
+}
+
+.location-pulse::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #2563eb;
+    border-radius: 50%;
+    animation: pulse 2s ease-out infinite;
+}
+
+/* Draw mode hint bar */
+#draw-hint {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1100;
+    background: rgba(37, 99, 235, 0.95);
+    color: white;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+#draw-hint.hidden {
+    display: none;
+}
+
+.draw-hint-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.draw-hint-actions button {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+#btn-undo-point {
+    background: rgba(255,255,255,0.2);
+    color: white;
+}
+
+#btn-finish-draw {
+    background: white;
+    color: #2563eb;
+}
+
+#btn-cancel-draw {
+    background: rgba(255,255,255,0.2);
+    color: white;
+}
+
+.draw-hint-actions button:active {
+    opacity: 0.7;
+}
+
+/* Building dialog */
+#building-dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#building-dialog.hidden {
+    display: none;
+}
+
+.dialog-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+}
+
+.dialog-content {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    width: 90%;
+    max-width: 340px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+
+.dialog-content h3 {
+    margin: 0 0 16px;
+    font-size: 18px;
+    color: #1a1a1a;
+}
+
+.dialog-content input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #ddd;
+    border-radius: 10px;
+    font-size: 15px;
+    outline: none;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
+}
+
+.dialog-content input:focus {
+    border-color: #2563eb;
+}
+
+.dialog-colors {
+    display: flex;
+    gap: 8px;
+    margin: 8px 0 16px;
+}
+
+.color-option {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: border-color 0.2s, transform 0.15s;
+}
+
+.color-option:hover {
+    transform: scale(1.15);
+}
+
+.color-option.selected {
+    border-color: #1a1a1a;
+}
+
+.dialog-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.dialog-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#dialog-cancel {
+    background: #f0f0f0;
+    color: #555;
+}
+
+#dialog-save {
+    background: #2563eb;
+    color: white;
+}
+
+/* Building list panel */
+#building-list-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1200;
+    background: white;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
+    max-height: 60vh;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+}
+
+#building-list-panel.hidden {
+    transform: translateY(100%);
+    pointer-events: none;
+}
+
+#building-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px 8px;
+    font-weight: 700;
+    font-size: 16px;
+    color: #1a1a1a;
+    border-bottom: 1px solid #f0f0f0;
+    position: sticky;
+    top: 0;
+    background: white;
+}
+
+#building-list-header::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+}
+
+#btn-close-building-list {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #999;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+#building-list-actions {
+    display: flex;
+    gap: 8px;
+    padding: 8px 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+#building-list-actions button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 0;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    color: #555;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+#building-list-actions button:active {
+    background: #f0f0f0;
+    border-color: #bbb;
+}
+
+#building-list-body {
+    padding: 8px 16px 24px;
+}
+
+#building-list-empty {
+    text-align: center;
+    color: #aaa;
+    padding: 32px 0;
+    font-size: 14px;
+}
+
+.building-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 8px;
+    border-bottom: 1px solid #f5f5f5;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.15s;
+}
+
+.building-item:hover {
+    background: #f8f8f8;
+}
+
+.building-item:last-child {
+    border-bottom: none;
+}
+
+.building-color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.building-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.building-item-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.building-item-desc {
+    font-size: 12px;
+    color: #999;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.building-item-delete {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+}
+
+.building-item-delete:hover {
+    color: #e53e3e;
+    background: #fee;
+}
+
+/* Building name label (permanent, centered) */
+.building-label {
+    background: none;
+    border: none;
+    box-shadow: none;
+    color: #1a1a1a;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    white-space: nowrap;
+    text-shadow: 0 0 3px white, 0 0 3px white, 0 0 3px white;
+    pointer-events: none;
+}
+
+.building-label::before {
+    display: none;
+}
+
+/* Draw panel (left side) */
+#draw-panel {
+    position: absolute;
+    top: 20px;
+    left: 16px;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#draw-panel button {
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 12px;
+    background: white;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+}
+
+#draw-panel button:active {
+    transform: scale(0.95);
+}
+
+#draw-panel button.active {
+    background: #2563eb;
+    color: white;
+}
+
+#draw-sub-tools {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#draw-sub-tools.hidden {
+    display: none;
+}
+
+.shape-history-divider {
+    height: 1px;
+    background: #ccc;
+    margin: 2px 4px;
+}
+
+#shape-history:empty {
+    display: none;
+}
+
+/* Shape overlay */
+#shape-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1050;
+    touch-action: none;
+}
+
+#shape-overlay.hidden {
+    display: none;
+}
+
+#shape-body {
+    position: absolute;
+    border: 2px solid #2563eb;
+    background: rgba(37, 99, 235, 0.2);
+    cursor: move;
+    touch-action: none;
+}
+
+#shape-body.circle {
+    border-radius: 50%;
+}
+
+.resize-handle {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: white;
+    border: 2px solid #2563eb;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    cursor: nwse-resize;
+    touch-action: none;
+    z-index: 2;
+}
+
+#rotate-handle {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: white;
+    border: 2px solid #f59e0b;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    cursor: grab;
+    touch-action: none;
+    z-index: 2;
+}
+
+#btn-shape-confirm {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 32px;
+    border: none;
+    border-radius: 10px;
+    background: #2563eb;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+    z-index: 3;
+}
+
+#btn-shape-confirm:active {
+    opacity: 0.8;
+}
+
+/* Leaflet overrides */
+.leaflet-control-attribution {
+    font-size: 10px !important;
+    background: rgba(255, 255, 255, 0.7) !important;
+}
+
+@media (min-width: 768px) {
+    #info-panel {
+        left: 16px;
+        right: auto;
+        bottom: 16px;
+        width: 340px;
+        border-radius: 16px;
+        max-height: 400px;
+    }
+
+    #info-panel.hidden {
+        transform: translateY(calc(100% + 16px));
+    }
+
+    #info-header::before {
+        display: none;
+    }
+}
